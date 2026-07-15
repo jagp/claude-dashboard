@@ -5,7 +5,7 @@
 //
 // Layout:
 //   line 1:  <model><effort>   ⌛ <rem5h>% [<reset>]  |  📅 <rem7d>% [<reset>]  |  Σ <exact session tokens>
-//   line 2:  ⑂ <short branch>   🔗 PR #<n>   📒 📜 🌳
+//   line 2:  ⑂ <short branch>   🔗 PR #<n>   [📒] [📜] [🌳]
 //
 // Model = a medal ladder (haiku 🥉 · sonnet 🥈 · opus 🥇 · fable 🏆); the
 // ranking reads straight off the glyphs. Σ is the exact token count (raw
@@ -115,6 +115,11 @@ function osc8(url, text) {
   return `\x1b]8;;${url}${ST}\x1b[4;36m${text}\x1b[24;39m\x1b]8;;${ST}`;
 }
 
+// A link dressed as a button: dim brackets around the clickable label.
+function button(url, text) {
+  return `\x1b[2m[\x1b[22m${osc8(url, text)}\x1b[2m]\x1b[22m`;
+}
+
 // "C:\a b\c" → "C:/a%20b/c". Every segment percent-encoded (spaces, #, etc.
 // silently kill clickability in Windows Terminal) but the drive colon kept —
 // encoding it also breaks linkification.
@@ -201,16 +206,16 @@ function render(d) {
   if (wtPath) fallbacks.push(osc8(fileUrl(wtPath), "📁 cwd"));
   while (nav.length < 2 && fallbacks.length) nav.push(fallbacks.shift());
 
-  // Controls, rendered as bare clickable emojis (no labels): 📒 logs folder →
+  // Controls, rendered as clickable emojis in dim brackets: [📒] logs folder →
   // Explorer (a ledger/logbook, not a wooden log — kept clear of the 🌳 branch
-  // metaphor), 📜 transcript file → OS default app, 🌳 base branch → its GitHub
-  // tree (or the trunk folder when there's no repo).
+  // metaphor), [📜] transcript file → OS default app, [🌳] base branch → its
+  // GitHub tree (or the trunk folder when there's no repo).
   const buttons = [];
   const tp = d?.transcript_path;
   if (tp) {
     const logsDir = dirname(tp);
-    if (logsDir) buttons.push(osc8(fileUrl(logsDir), "📒"));
-    buttons.push(osc8(fileUrl(tp), "📜"));
+    if (logsDir) buttons.push(button(fileUrl(logsDir), "📒"));
+    buttons.push(button(fileUrl(tp), "📜"));
   }
   const baseBranch = wt?.original_branch || branch;
   if (baseBranch) {
@@ -220,7 +225,7 @@ function render(d) {
       : basePath
         ? fileUrl(basePath)
         : null;
-    if (target) buttons.push(osc8(target, "🌳"));
+    if (target) buttons.push(button(target, "🌳"));
   }
 
   const line2Parts = [...nav];
