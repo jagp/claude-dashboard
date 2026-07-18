@@ -14,11 +14,11 @@
 // Line 2 always carries at least two links — when the session has no worktree
 // or PR it pads from repo → issues → cwd fallbacks — plus the emoji controls
 // (📒 logs folder · 📜 transcript · 🌳 base branch). Every link is an OSC 8
-// hyperlink (Ctrl+click). NOTE: local-path links use file:// so a passthrough
-// terminal (Windows Terminal, WezTerm) opens the OS Explorer; VS Code's
-// integrated terminal intercepts file:// and reveals the path inside VS Code
-// instead. True OS-Explorer-from-VS-Code needs a custom protocol handler or an
-// extension (see docs/HOTSTART.md, Layer A/C).
+// hyperlink (Ctrl/Alt+click). Local paths use the custom claudectl:// scheme
+// (docs/HOTSTART.md Layer C): VS Code's terminal used to hijack file:// links
+// into Quick Open, but it must hand an unknown scheme to the OS, where the
+// registered handler (claudectl-handler.ps1, installed by
+// claudectl-register.ps1) opens folders in Explorer and reveals files.
 
 let raw = "";
 process.stdin.setEncoding("utf8");
@@ -123,23 +123,35 @@ function button(url, text) {
 // "C:\a b\c" → "C:/a%20b/c". Every segment percent-encoded (spaces, #, etc.
 // silently kill clickability in Windows Terminal) but the drive colon kept —
 // encoding it also breaks linkification.
+// encodeURIComponent throws URIError on unpaired UTF-16 surrogates, which NTFS
+// permits in names; without the fallback one such directory anywhere in a path
+// would collapse the whole statusline to the "status" fallback. Replacing the
+// lone surrogate with U+FFFD yields a dead link for that exotic segment but
+// keeps every other segment — and the rest of the bar — intact.
+function encodeSegment(seg) {
+  try {
+    return encodeURIComponent(seg);
+  } catch {
+    return encodeURIComponent(
+      seg.replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, "�"),
+    );
+  }
+}
+
 function encodeWinPath(p) {
   const s = String(p).replace(/\\/g, "/");
   const m = s.match(/^([A-Za-z]:)(.*)$/);
   const drive = m ? m[1] : "";
   const rest = m ? m[2] : s;
-  return drive + rest.split("/").map(encodeURIComponent).join("/");
+  return drive + rest.split("/").map(encodeSegment).join("/");
 }
 
-// Opens the path with the OS handler — Explorer for folders, default app for
-// files (in a passthrough terminal; VS Code's integrated terminal reveals the
-// path in VS Code itself rather than launching the OS Explorer — see note in
-// the header).
-
-function fileUrl(p) {
-  const enc = encodeWinPath(p);
-  return "file://" + (enc.startsWith("/") ? "" : "/") + enc;
-}
+// Opens the path in Windows Explorer via the claudectl:// protocol — an
+// OS-registered handler (install: claudectl-register.ps1) that opens folders
+// as an Explorer window and reveals files with /select. Unlike file://, VS
+// Code's integrated terminal cannot handle this scheme itself, so it hands
+// the click to the OS instead of hijacking it into Quick Open.
+const claudectlUrl = (p) => "claudectl://open/" + encodeWinPath(p);
 
 const dirname = (p) => String(p).replace(/[\\/][^\\/]*$/, "");
 
@@ -185,13 +197,13 @@ function render(d) {
 
   const nav = [];
   if (branch && wtPath) {
-    nav.push(osc8(fileUrl(wtPath), `⑂ ${shortBranch(branch)}`));
+    nav.push(osc8(claudectlUrl(wtPath), `⑂ ${shortBranch(branch)}`));
   } else if (wtPath) {
     const base = wtPath.replace(/[\\/]+$/, "").split(/[\\/]/).pop();
-    nav.push(osc8(fileUrl(wtPath), `📂 ${base}`));
+    nav.push(osc8(claudectlUrl(wtPath), `📂 ${base}`));
   }
   if (wt && wtName && branch && wtName !== branch && wtPath) {
-    nav.push(osc8(fileUrl(wtPath), `📂 ${wtName}`));
+    nav.push(osc8(claudectlUrl(wtPath), `📂 ${wtName}`));
   }
   if (d?.pr?.number != null && d?.pr?.url) {
     nav.push(osc8(d.pr.url, `🔗 PR #${d.pr.number}`));
@@ -203,7 +215,7 @@ function render(d) {
     fallbacks.push(osc8(repoUrl, `🌐 ${repo.owner}/${repo.name}`));
     fallbacks.push(osc8(repoUrl + "/issues", "🐛 issues"));
   }
-  if (wtPath) fallbacks.push(osc8(fileUrl(wtPath), "📁 cwd"));
+  if (wtPath) fallbacks.push(osc8(claudectlUrl(wtPath), "📁 cwd"));
   while (nav.length < 2 && fallbacks.length) nav.push(fallbacks.shift());
 
   // Controls, rendered as clickable emojis in dim brackets: [📒] logs folder →
@@ -214,8 +226,10 @@ function render(d) {
   const tp = d?.transcript_path;
   if (tp) {
     const logsDir = dirname(tp);
-    if (logsDir) buttons.push(button(fileUrl(logsDir), "📒"));
-    buttons.push(button(fileUrl(tp), "📜"));
+    // dirname of a separator-less path returns it unchanged — skip the logs
+    // button rather than duplicating the transcript link.
+    if (logsDir && logsDir !== tp) buttons.push(button(claudectlUrl(logsDir), "📒"));
+    buttons.push(button(claudectlUrl(tp), "📜"));
   }
   const baseBranch = wt?.original_branch || branch;
   if (baseBranch) {
@@ -223,7 +237,7 @@ function render(d) {
     const target = repoUrl
       ? `${repoUrl}/tree/${baseBranch.split("/").map(encodeURIComponent).join("/")}`
       : basePath
-        ? fileUrl(basePath)
+        ? claudectlUrl(basePath)
         : null;
     if (target) buttons.push(button(target, "🌳"));
   }
