@@ -4,12 +4,21 @@
 // Plain CommonJS, no deps. Must always print (and never throw), or the bar hides.
 //
 // Layout:
-//   line 1:  <model><effort>   ⌛ <rem5h>% [<reset>]  |  📅 <rem7d>% [<reset>]  |  Σ <session tokens>
-//   line 2:  ⑂ <branch>   🔗 PR #<n>   [logs] [transcript] [⑂ <base branch>]
+//   line 1:  <model><effort>   ⌛ <rem5h>% [<reset>]  |  📅 <rem7d>% [<reset>]  |  Σ <exact session tokens>
+//   line 2:  ⑂ <short branch>   🔗 PR #<n>   [📒] [📜] [🌳]
+//
+// Model = a medal ladder (haiku 🥉 · sonnet 🥈 · opus 🥇 · fable 🏆); the
+// ranking reads straight off the glyphs. Σ is the exact token count (raw
+// digits, no abbreviation). Branches show as f/first-three-words.
 //
 // Line 2 always carries at least two links — when the session has no worktree
-// or PR it pads from repo → issues → cwd fallbacks — plus the three [buttons].
-// Every link is an OSC 8 hyperlink (Ctrl+click in Windows Terminal / VS Code).
+// or PR it pads from repo → issues → cwd fallbacks — plus the emoji controls
+// (📒 logs folder · 📜 transcript · 🌳 base branch). Every link is an OSC 8
+// hyperlink (Ctrl/Alt+click). Local paths use the custom claudectl:// scheme
+// (docs/HOTSTART.md Layer C): VS Code's terminal used to hijack file:// links
+// into Quick Open, but it must hand an unknown scheme to the OS, where the
+// registered handler (claudectl-handler.ps1, installed by
+// claudectl-register.ps1) opens folders in Explorer and reveals files.
 
 let raw = "";
 process.stdin.setEncoding("utf8");
@@ -26,10 +35,13 @@ process.stdin.on("end", () => {
 
 // --- glyph scales (swap any of these in one place) --------------------------
 
-// Model complexity, simple → complex. A block-height ramp, distinct from the
-// circle ramp used for effort so the two badges never blur together.
-const MODEL_ICON = { haiku: "▂", sonnet: "▄", opus: "▆", fable: "█" };
-const MODEL_FALLBACK = "▁";
+// Model tier, least → most capable. A podium/medal ladder: the emojis form a
+// self-ordering ranking (bronze → silver → gold → trophy), so the difference
+// between them *is* the relationship — no legend needed. Chosen to stay clear
+// of the circle ramp used for effort so the two badges never blur together.
+const MODEL_ICON = { haiku: "🥉", sonnet: "🥈", opus: "🥇", fable: "🏆" };
+// Unknown/future model: a generic medal — "a ranked model, tier unclassified".
+const MODEL_FALLBACK = "🎖️";
 
 // Reasoning effort, mirroring the model-picker UI: empty → half → full →
 // double → star.
@@ -84,18 +96,12 @@ function usageLine(rl) {
 
 // --- session token total -----------------------------------------------------
 
-// 950 → "950", 9_500 → "9.5k", 162_000 → "162k", 1_234_567 → "1.2M".
-function fmtTokens(n) {
-  if (!(n > 0)) return null;
-  if (n < 1000) return String(n);
-  if (n < 1e6) return n < 9950 ? (n / 1e3).toFixed(1) + "k" : Math.round(n / 1e3) + "k";
-  return n < 9.95e6 ? (n / 1e6).toFixed(1) + "M" : Math.round(n / 1e6) + "M";
-}
-
-// Running total for the whole session: input (incl. cache reads/writes) + output.
+// Full fidelity — the exact count as raw digits, never abbreviated or grouped:
+// 950 → "950", 162_000 → "162000", 1_234_567 → "1234567". Only the Σ prefix,
+// no separators or unit suffixes.
 function tokenSegment(cw) {
-  const t = fmtTokens((cw?.total_input_tokens || 0) + (cw?.total_output_tokens || 0));
-  return t ? `Σ ${t}` : null;
+  const total = (cw?.total_input_tokens || 0) + (cw?.total_output_tokens || 0);
+  return total > 0 ? `Σ ${total}` : null;
 }
 
 // --- clickable links (OSC 8) ------------------------------------------------
@@ -117,24 +123,55 @@ function button(url, text) {
 // "C:\a b\c" → "C:/a%20b/c". Every segment percent-encoded (spaces, #, etc.
 // silently kill clickability in Windows Terminal) but the drive colon kept —
 // encoding it also breaks linkification.
+// encodeURIComponent throws URIError on unpaired UTF-16 surrogates, which NTFS
+// permits in names; without the fallback one such directory anywhere in a path
+// would collapse the whole statusline to the "status" fallback. Replacing the
+// lone surrogate with U+FFFD yields a dead link for that exotic segment but
+// keeps every other segment — and the rest of the bar — intact.
+function encodeSegment(seg) {
+  try {
+    return encodeURIComponent(seg);
+  } catch {
+    return encodeURIComponent(
+      seg.replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, "�"),
+    );
+  }
+}
+
 function encodeWinPath(p) {
   const s = String(p).replace(/\\/g, "/");
   const m = s.match(/^([A-Za-z]:)(.*)$/);
   const drive = m ? m[1] : "";
   const rest = m ? m[2] : s;
-  return drive + rest.split("/").map(encodeURIComponent).join("/");
+  return drive + rest.split("/").map(encodeSegment).join("/");
 }
 
-// Opens the path in VS Code (files and folders both work).
-const vscodeUrl = (p) => "vscode://file/" + encodeWinPath(p);
-
-// Opens the path with the OS handler — Explorer for folders.
-function fileUrl(p) {
-  const enc = encodeWinPath(p);
-  return "file://" + (enc.startsWith("/") ? "" : "/") + enc;
-}
+// Opens the path in Windows Explorer via the claudectl:// protocol — an
+// OS-registered handler (install: claudectl-register.ps1) that opens folders
+// as an Explorer window and reveals files with /select. Unlike file://, VS
+// Code's integrated terminal cannot handle this scheme itself, so it hands
+// the click to the OS instead of hijacking it into Quick Open.
+const claudectlUrl = (p) => "claudectl://open/" + encodeWinPath(p);
 
 const dirname = (p) => String(p).replace(/[\\/][^\\/]*$/, "");
+
+// Compact a gitflow branch for display: collapse the "type/" prefix to its
+// initial (feature/ → f/, hotfix/ → h/, release/ → r/, …) and keep only the
+// first three hyphen/underscore-separated words of the rest.
+//   feature/statusline-fidelity-emoji-links → f/statusline-fidelity-emoji
+//   develop                                  → develop
+function shortBranch(b) {
+  if (!b) return b;
+  const slash = b.indexOf("/");
+  let prefix = "";
+  let rest = b;
+  if (slash !== -1) {
+    prefix = b.slice(0, slash).charAt(0) + "/"; // feature → "f/"
+    rest = b.slice(slash + 1);
+  }
+  const words = rest.split(/[-_]/).filter(Boolean).slice(0, 3).join("-");
+  return prefix + words;
+}
 
 // --- render -----------------------------------------------------------------
 
@@ -145,7 +182,8 @@ function render(d) {
   if (tok) segs.push(tok);
   const line1 = `${badge}   ${segs.join("  |  ")}`;
 
-  // Navigation line: branch/worktree → open the folder in VS Code; PR → GitHub.
+  // Navigation line: branch/worktree → open the folder via the OS handler
+  // (Explorer/Finder in a passthrough terminal); PR → GitHub.
   const ws = d?.workspace;
   const wt = d?.worktree;
   const wtPath = wt?.path || ws?.current_dir;
@@ -159,13 +197,13 @@ function render(d) {
 
   const nav = [];
   if (branch && wtPath) {
-    nav.push(osc8(vscodeUrl(wtPath), `⑂ ${branch}`));
+    nav.push(osc8(claudectlUrl(wtPath), `⑂ ${shortBranch(branch)}`));
   } else if (wtPath) {
     const base = wtPath.replace(/[\\/]+$/, "").split(/[\\/]/).pop();
-    nav.push(osc8(vscodeUrl(wtPath), `📂 ${base}`));
+    nav.push(osc8(claudectlUrl(wtPath), `📂 ${base}`));
   }
   if (wt && wtName && branch && wtName !== branch && wtPath) {
-    nav.push(osc8(vscodeUrl(wtPath), `📂 ${wtName}`));
+    nav.push(osc8(claudectlUrl(wtPath), `📂 ${wtName}`));
   }
   if (d?.pr?.number != null && d?.pr?.url) {
     nav.push(osc8(d.pr.url, `🔗 PR #${d.pr.number}`));
@@ -177,16 +215,21 @@ function render(d) {
     fallbacks.push(osc8(repoUrl, `🌐 ${repo.owner}/${repo.name}`));
     fallbacks.push(osc8(repoUrl + "/issues", "🐛 issues"));
   }
-  if (wtPath) fallbacks.push(osc8(fileUrl(wtPath), "📁 cwd"));
+  if (wtPath) fallbacks.push(osc8(claudectlUrl(wtPath), "📁 cwd"));
   while (nav.length < 2 && fallbacks.length) nav.push(fallbacks.shift());
 
-  // Buttons: logs folder (Explorer), transcript (VS Code), main working branch.
+  // Controls, rendered as clickable emojis in dim brackets: [📒] logs folder →
+  // Explorer (a ledger/logbook, not a wooden log — kept clear of the 🌳 branch
+  // metaphor), [📜] transcript file → OS default app, [🌳] base branch → its
+  // GitHub tree (or the trunk folder when there's no repo).
   const buttons = [];
   const tp = d?.transcript_path;
   if (tp) {
     const logsDir = dirname(tp);
-    if (logsDir) buttons.push(button(fileUrl(logsDir), "logs"));
-    buttons.push(button(vscodeUrl(tp), "transcript"));
+    // dirname of a separator-less path returns it unchanged — skip the logs
+    // button rather than duplicating the transcript link.
+    if (logsDir && logsDir !== tp) buttons.push(button(claudectlUrl(logsDir), "📒"));
+    buttons.push(button(claudectlUrl(tp), "📜"));
   }
   const baseBranch = wt?.original_branch || branch;
   if (baseBranch) {
@@ -194,9 +237,9 @@ function render(d) {
     const target = repoUrl
       ? `${repoUrl}/tree/${baseBranch.split("/").map(encodeURIComponent).join("/")}`
       : basePath
-        ? vscodeUrl(basePath)
+        ? claudectlUrl(basePath)
         : null;
-    if (target) buttons.push(button(target, `⑂ ${baseBranch}`));
+    if (target) buttons.push(button(target, "🌳"));
   }
 
   const line2Parts = [...nav];
