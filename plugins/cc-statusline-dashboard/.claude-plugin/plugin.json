@@ -1,5 +1,5 @@
 {
-  "name": "clickable-statusline",
+  "name": "cc-statusline-dashboard",
   "version": "1.0.0",
   "description": "Two-line Claude Code statusline: medal model glyphs, effort dial, rate-limit windows with reset stamps, exact session token count, and clickable emoji links (branch folder, PR, transcript, logs, base branch). On Windows, a claudectl:// protocol handler makes local-path links open Windows Explorer even from VS Code's integrated terminal.",
   "author": {

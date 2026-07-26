@@ -1,12 +1,12 @@
 ---
 name: uninstall
-description: This skill should be used when the user asks to "uninstall the clickable statusline", "remove the statusline plugin", "restore my old statusline", "unregister claudectl", or runs /clickable-statusline:uninstall. Restores the pre-install statusline and settings and removes the Windows claudectl:// protocol.
+description: This skill should be used when the user asks to "uninstall the clickable statusline", "remove the statusline plugin", "restore my old statusline", "unregister claudectl", or runs /cc-statusline-dashboard:uninstall. Restores the pre-install statusline and settings and removes the Windows claudectl:// protocol.
 allowed-tools: Read, Write, Edit, Bash
 ---
 
 # Uninstall the clickable statusline
 
-Fully reverse `/clickable-statusline:install`: restore whatever statusline was
+Fully reverse `/cc-statusline-dashboard:install`: restore whatever statusline was
 live before, restore the previous `statusLine` setting, and on Windows remove
 the `claudectl://` protocol registration and its deployed files.
 
@@ -32,7 +32,7 @@ install), delete `~/.claude/statusline.js`.
 
 ## Step 3 — Restore settings.json
 
-1. If `~/.claude/clickable-statusline.prev-settings.json` exists, set the
+1. If `~/.claude/cc-statusline-dashboard.prev-settings.json` exists, set the
    `statusLine` key in `~/.claude/settings.json` back to that saved value,
    then delete the backup file.
 2. Otherwise remove the `statusLine` key entirely (there was none before
@@ -46,4 +46,4 @@ install), delete `~/.claude/statusline.js`.
 - Confirm settings.json parses as valid JSON after the edit.
 - Tell the user the previous statusline (or no statusline) is back on the next
   refresh, and that the plugin itself can be removed with
-  `/plugin uninstall clickable-statusline`.
+  `/plugin uninstall cc-statusline-dashboard`.

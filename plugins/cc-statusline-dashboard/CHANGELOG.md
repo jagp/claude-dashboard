@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to the clickable-statusline plugin.
+All notable changes to the cc-statusline-dashboard plugin.
 
 ## 1.0.0 — 2026-07-25
 
@@ -26,6 +26,6 @@ Initial release.
     Windows Settings > Apps uninstall entry
 - Cross-platform links: `claudectl://` on Windows, plain `file://` on
   macOS/Linux (where VS Code's terminal does not hijack them)
-- `/clickable-statusline:install` and `/clickable-statusline:uninstall` skills
+- `/cc-statusline-dashboard:install` and `/cc-statusline-dashboard:uninstall` skills
   (deploy + wire `settings.json > statusLine`, fully reversible)
 - Glyph-ramp customization catalog (`docs/customizing-glyphs.md`)

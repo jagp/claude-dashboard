@@ -11,3 +11,4 @@ Thumbs.db
 # Local captures / transcripts — never ship these
 chat-transcript.jsonl
 *.local.md
+docs/.private

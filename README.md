@@ -2,12 +2,12 @@
 
 Statusline and session tooling for [Claude Code](https://code.claude.com).
 This repo is a **Claude Code plugin marketplace**; its first plugin,
-**clickable-statusline**, turns the status bar into a two-line dashboard where
+**cc-statusline-dashboard**, turns the status bar into a two-line dashboard where
 every destination is a clickable link.
 
 ```
 🏆●   ⌛ 80% [15:20]  |  📅 62% [7/28 4:37]  |  Σ 162345
-⑂ f/statusline-plugin   🔗 PR #12   [📒] [📜] [🌳]
+⑂ f/cc-statusline-dashboard   🔗 PR #12   [📒] [📜] [🌳]
 ```
 
 - **Medal model badge** (🥉 haiku → 🏆 fable) and **effort dial** (○–★) — the
@@ -24,8 +24,8 @@ every destination is a clickable link.
 
 ```
 /plugin marketplace add <path-or-git-url-of-this-repo>
-/plugin install clickable-statusline@claude-dashboard
-/clickable-statusline:install
+/plugin install cc-statusline-dashboard@claude-dashboard
+/cc-statusline-dashboard:install
 ```
 
 Requirements: Node.js, a hyperlink-aware terminal (Windows Terminal, VS Code,
@@ -34,11 +34,11 @@ cross-platform.
 
 Full details — what each glyph means, how the protocol handler stays
 non-destructive, manual install steps — in
-[`plugins/clickable-statusline/README.md`](plugins/clickable-statusline/README.md).
+[`plugins/cc-statusline-dashboard/README.md`](plugins/cc-statusline-dashboard/README.md).
 
 ## Uninstall
 
-`/clickable-statusline:uninstall` restores whatever statusline was live before
+`/cc-statusline-dashboard:uninstall` restores whatever statusline was live before
 install. On Windows, **Settings > Apps > "Claude Control Protocol (claudectl)"**
 does the same via the OS-standard flow.
 
@@ -47,15 +47,15 @@ does the same via the OS-standard flow.
 Both glyph scales live in one place at the top of `statusline.js`. A catalog of
 ready-made alternative ramps (psychology 😴🙂🤔🧐🤯, caffeine, creature-size,
 gemstones, …) plus terminal-rendering caveats:
-[`plugins/clickable-statusline/docs/customizing-glyphs.md`](plugins/clickable-statusline/docs/customizing-glyphs.md).
+[`plugins/cc-statusline-dashboard/docs/customizing-glyphs.md`](plugins/cc-statusline-dashboard/docs/customizing-glyphs.md).
 
 ## Repo layout
 
 ```
 .claude-plugin/marketplace.json     marketplace listing
-plugins/clickable-statusline/       the installable plugin (single source of truth)
+plugins/cc-statusline-dashboard/    the installable plugin (single source of truth)
   statusline/                       statusline.js + claudectl protocol scripts
-  skills/install, skills/uninstall  the /clickable-statusline:* skills
+  skills/install, skills/uninstall  the /cc-statusline-dashboard:* skills
   docs/customizing-glyphs.md        glyph-ramp catalog
   CHANGELOG.md · LICENSE · README.md
 docs/superpowers/                   design spec & implementation plan for the

@@ -1,4 +1,4 @@
-# clickable-statusline
+# cc-statusline-dashboard
 
 A two-line Claude Code statusline where everything you'd want to jump to is a
 **clickable link**, and the session's vital signs read off self-ordering glyphs
@@ -6,7 +6,7 @@ A two-line Claude Code statusline where everything you'd want to jump to is a
 
 ```
 🏆●   ⌛ 80% [15:20]  |  📅 62% [7/28 4:37]  |  Σ 162345
-⑂ f/statusline-plugin   🔗 PR #12   [📒] [📜] [🌳]
+⑂ f/cc-statusline-dashboard   🔗 PR #12   [📒] [📜] [🌳]
 ```
 
 ## What each piece means
@@ -58,8 +58,8 @@ by any web page and probing a UNC path would auto-send NTLM credentials.
 
 ```
 /plugin marketplace add <path-or-git-url-of-this-repo>
-/plugin install clickable-statusline@claude-dashboard
-/clickable-statusline:install
+/plugin install cc-statusline-dashboard@claude-dashboard
+/cc-statusline-dashboard:install
 ```
 
 The install skill:
@@ -93,13 +93,13 @@ On Windows, additionally run
 ## Uninstall
 
 ```
-/clickable-statusline:uninstall
+/cc-statusline-dashboard:uninstall
 ```
 
 Restores the statusline and `statusLine` setting that were live before
 install, removes the protocol registration and deployed files. On Windows,
 **Settings > Apps > "Claude Control Protocol (claudectl)" > Uninstall** does
-the same. Then `/plugin uninstall clickable-statusline` removes the plugin.
+the same. Then `/plugin uninstall cc-statusline-dashboard` removes the plugin.
 
 ## Customizing the glyphs
 
@@ -117,6 +117,6 @@ statusline/claudectl-register.ps1  Windows protocol installer (idempotent, HKCU)
 statusline/claudectl-handler.ps1   protocol handler — read-only, Explorer-only
 statusline/claudectl-unregister.ps1  full reversal incl. statusline restore
 statusline/claudectl.vbs           windowless launcher (no console flash)
-skills/install, skills/uninstall   the /clickable-statusline:* skills
+skills/install, skills/uninstall   the /cc-statusline-dashboard:* skills
 docs/customizing-glyphs.md         alternative glyph ramps + caveats
 ```

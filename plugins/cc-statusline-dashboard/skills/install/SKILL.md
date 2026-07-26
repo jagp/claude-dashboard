@@ -1,6 +1,6 @@
 ---
 name: install
-description: This skill should be used when the user asks to "install the clickable statusline", "set up the statusline", "enable the statusline plugin", "register claudectl", or runs /clickable-statusline:install. Deploys the statusline script, wires it into settings.json, and (on Windows) registers the claudectl:// Explorer protocol.
+description: This skill should be used when the user asks to "install the clickable statusline", "set up the statusline", "enable the statusline plugin", "register claudectl", or runs /cc-statusline-dashboard:install. Deploys the statusline script, wires it into settings.json, and (on Windows) registers the claudectl:// Explorer protocol.
 allowed-tools: Read, Write, Edit, Bash, AskUserQuestion
 ---
 
@@ -10,7 +10,7 @@ Deploy the plugin's statusline to `~/.claude/statusline.js`, point the user's
 `statusLine` setting at it, and on Windows register the `claudectl://` protocol
 so local-path links open Windows Explorer instead of being hijacked by VS
 Code's terminal. All steps are idempotent and reversible via
-`/clickable-statusline:uninstall`.
+`/cc-statusline-dashboard:uninstall`.
 
 Resolve the plugin root first: it is two directory levels above this skill's
 base directory (`<plugin-root>/skills/install/` → `<plugin-root>`). Below,
@@ -31,7 +31,7 @@ literally in every command. The files used:
 ## Step 1 — Preserve what the user already has
 
 1. Read `~/.claude/settings.json`. If it contains a `statusLine` key, save the
-   exact current value to `~/.claude/clickable-statusline.prev-settings.json`
+   exact current value to `~/.claude/cc-statusline-dashboard.prev-settings.json`
    (create the file with the JSON value; skip if that backup file already
    exists — never overwrite an existing backup on re-install).
 2. **Windows:** run the register script BEFORE copying the statusline — it
@@ -96,5 +96,5 @@ Expect `action=open path=C:\Users dir=True file=False`.
 Tell the user: the statusline is active on the next statusline refresh (or
 restart of Claude Code); links are Ctrl/Alt+click in hyperlink-aware terminals
 (Windows Terminal, VS Code, iTerm2, WezTerm); uninstall via
-`/clickable-statusline:uninstall` or (Windows) Settings > Apps > "Claude
+`/cc-statusline-dashboard:uninstall` or (Windows) Settings > Apps > "Claude
 Control Protocol (claudectl)".
