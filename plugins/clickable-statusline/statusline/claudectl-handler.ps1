@@ -4,13 +4,13 @@
 # terminal (which intercepts file:// links itself but must hand unknown
 # schemes to the OS).
 #
-# URI shape (produced by statusline.current.js):
+# URI shape (produced by statusline.js):
 #   claudectl://open/C:/Users/jared/Some%20Dir        → Explorer window on the folder
 #   claudectl://open/C:/Users/jared/Some%20Dir/f.txt  → Explorer with the file selected
 #
 # Deliberately non-destructive: the only action is showing an existing path in
 # Explorer. A registered scheme is invocable by any web page, so nothing here
-# may ever delete, write, or execute (see docs/HOTSTART.md security note).
+# may ever delete, write, or execute (see the security notes in README.md).
 #
 # Set CLAUDECTL_DRYRUN=1 to print the resolved action instead of launching.
 

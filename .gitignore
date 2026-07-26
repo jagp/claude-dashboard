@@ -1,0 +1,13 @@
+# Claude Code session-local state (worktrees, caches, local settings)
+.claude/
+
+# Node
+node_modules/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Local captures / transcripts — never ship these
+chat-transcript.jsonl
+*.local.md
