@@ -1,0 +1,32 @@
+{
+  "name": "claude-dashboard",
+  "owner": {
+    "name": "Jared Parmenter"
+  },
+  "metadata": {
+    "description": "Plugins from the claude-dashboard project: statusline and session-control tooling for Claude Code.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "clickable-statusline",
+      "source": "./plugins/clickable-statusline",
+      "description": "Two-line statusline: medal model glyphs, effort dial, rate-limit windows, exact token count, and clickable emoji links — with a Windows claudectl:// protocol so links open Explorer even from VS Code's terminal.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Jared Parmenter"
+      },
+      "license": "MIT",
+      "category": "productivity",
+      "keywords": [
+        "statusline",
+        "osc8",
+        "hyperlinks",
+        "rate-limits",
+        "tokens",
+        "windows",
+        "explorer"
+      ]
+    }
+  ]
+}
