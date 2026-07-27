@@ -3,7 +3,7 @@
 A palette of ordered glyph ramps for the statusline badges. The design rule for
 every scale: **the ordering must read straight off the differences between the
 glyphs** — no legend required (the "1‑2‑3‑4" test). Swap any ramp in one place
-in `statusline.current.js` (`MODEL_ICON` / `EFFORT_ICON` and their fallbacks).
+in `statusline.js` (`MODEL_ICON` / `EFFORT_ICON` and their fallbacks).
 
 Two badges use these scales:
 
@@ -93,7 +93,7 @@ Ordered `haiku → sonnet → opus → fable`. (The live scale is medals.)
 
 ## How to apply
 
-In `statusline.current.js`:
+In `statusline.js`:
 
 ```js
 // Effort — pick a row above; 5 stops, monotonic.
@@ -101,7 +101,7 @@ const EFFORT_ICON = { low: "😴", medium: "🙂", high: "🤔", xhigh: "🧐", 
 const EFFORT_FALLBACK = "·";
 ```
 
-Then redeploy: `cp statusline.current.js ~/.claude/statusline.js` (the live file
+Then redeploy: copy the edited file to `~/.claude/statusline.js` (the live file
 `settings.json` runs). The bar re‑renders on the next tick.
 
 **Recommendation:** for the clearest "how hard is it working" read, the

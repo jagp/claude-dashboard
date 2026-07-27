@@ -8,6 +8,11 @@
 If WScript.Arguments.Count > 0 Then
   Set fso = CreateObject("Scripting.FileSystemObject")
   handler = fso.BuildPath(fso.GetParentFolderName(WScript.ScriptFullName), "claudectl-handler.ps1")
-  args = "-NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File """ & handler & """ """ & WScript.Arguments(0) & """"
+  ' Strip double quotes from the URI: a literal " could break out of the quoted
+  ' argument below and smuggle extra powershell.exe arguments. Quotes are never
+  ' valid in a claudectl:// URI (the statusline percent-encodes them), so
+  ' stripping loses nothing legitimate.
+  uri = Replace(WScript.Arguments(0), """", "")
+  args = "-NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File """ & handler & """ """ & uri & """"
   CreateObject("Shell.Application").ShellExecute "powershell.exe", args, "", "open", 0
 End If
