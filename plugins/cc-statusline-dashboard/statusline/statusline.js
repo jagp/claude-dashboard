@@ -14,11 +14,14 @@
 // Line 2 always carries at least two links — when the session has no worktree
 // or PR it pads from repo → issues → cwd fallbacks — plus the emoji controls
 // (📒 logs folder · 📜 transcript · 🌳 base branch). Every link is an OSC 8
-// hyperlink (Ctrl/Alt+click). Local paths use the custom claudectl:// scheme
-// (docs/HOTSTART.md Layer C): VS Code's terminal used to hijack file:// links
-// into Quick Open, but it must hand an unknown scheme to the OS, where the
-// registered handler (claudectl-handler.ps1, installed by
-// claudectl-register.ps1) opens folders in Explorer and reveals files.
+// hyperlink (Ctrl/Alt+click).
+//
+// Local paths: on Windows they use the custom claudectl:// scheme. VS Code's
+// terminal hijacks file:// links into Quick Open, but it must hand an unknown
+// scheme to the OS, where the registered handler (claudectl-handler.ps1,
+// installed by claudectl-register.ps1) opens folders in Explorer and reveals
+// files. On macOS/Linux no such hijack exists, so plain file:// links are
+// emitted and the OS file manager handles them.
 
 let raw = "";
 process.stdin.setEncoding("utf8");
@@ -69,7 +72,7 @@ const hm = (dt) => `${dt.getHours()}:${pad2(dt.getMinutes())}`;          // 15:2
 const mdhm = (dt) => `${dt.getMonth() + 1}/${dt.getDate()} ${hm(dt)}`;   // 7/11 4:37
 
 // One window → "<icon> <remaining>% [<reset>]". Remaining = 100 − consumed.
-// No countdown — just the absolute reset stamp, per request.
+// No countdown — just the absolute reset stamp.
 function windowSegment(icon, win, fmt) {
   if (!win || win.used_percentage == null) return null;
   const rem = Math.max(0, 100 - Math.round(win.used_percentage));
@@ -85,7 +88,7 @@ function usageLine(rl) {
   const seven = windowSegment("📅", rl.seven_day, mdhm);
   if (five) parts.push(five);
   if (seven) parts.push(seven);
-  // Any future window (e.g. a Fable/model cap) renders generically by its key.
+  // Any future window (e.g. a model-specific cap) renders generically by key.
   for (const key of Object.keys(rl)) {
     if (key === "five_hour" || key === "seven_day") continue;
     const seg = windowSegment(key, rl[key], mdhm);
@@ -138,7 +141,7 @@ function encodeSegment(seg) {
   }
 }
 
-function encodeWinPath(p) {
+function encodePath(p) {
   const s = String(p).replace(/\\/g, "/");
   const m = s.match(/^([A-Za-z]:)(.*)$/);
   const drive = m ? m[1] : "";
@@ -146,12 +149,15 @@ function encodeWinPath(p) {
   return drive + rest.split("/").map(encodeSegment).join("/");
 }
 
-// Opens the path in Windows Explorer via the claudectl:// protocol — an
-// OS-registered handler (install: claudectl-register.ps1) that opens folders
-// as an Explorer window and reveals files with /select. Unlike file://, VS
-// Code's integrated terminal cannot handle this scheme itself, so it hands
-// the click to the OS instead of hijacking it into Quick Open.
-const claudectlUrl = (p) => "claudectl://open/" + encodeWinPath(p);
+// Link to a local path. Windows: the claudectl:// protocol — an OS-registered
+// handler (install: claudectl-register.ps1) that opens folders as an Explorer
+// window and reveals files with /select. Unlike file://, VS Code's integrated
+// terminal cannot handle this scheme itself, so it hands the click to the OS
+// instead of hijacking it into Quick Open. Elsewhere: plain file://, which the
+// OS resolves to Finder / the default file manager.
+const isWindows = process.platform === "win32";
+const localUrl = (p) =>
+  isWindows ? "claudectl://open/" + encodePath(p) : "file://" + encodePath(p);
 
 const dirname = (p) => String(p).replace(/[\\/][^\\/]*$/, "");
 
@@ -197,13 +203,13 @@ function render(d) {
 
   const nav = [];
   if (branch && wtPath) {
-    nav.push(osc8(claudectlUrl(wtPath), `⑂ ${shortBranch(branch)}`));
+    nav.push(osc8(localUrl(wtPath), `⑂ ${shortBranch(branch)}`));
   } else if (wtPath) {
     const base = wtPath.replace(/[\\/]+$/, "").split(/[\\/]/).pop();
-    nav.push(osc8(claudectlUrl(wtPath), `📂 ${base}`));
+    nav.push(osc8(localUrl(wtPath), `📂 ${base}`));
   }
   if (wt && wtName && branch && wtName !== branch && wtPath) {
-    nav.push(osc8(claudectlUrl(wtPath), `📂 ${wtName}`));
+    nav.push(osc8(localUrl(wtPath), `📂 ${wtName}`));
   }
   if (d?.pr?.number != null && d?.pr?.url) {
     nav.push(osc8(d.pr.url, `🔗 PR #${d.pr.number}`));
@@ -215,7 +221,7 @@ function render(d) {
     fallbacks.push(osc8(repoUrl, `🌐 ${repo.owner}/${repo.name}`));
     fallbacks.push(osc8(repoUrl + "/issues", "🐛 issues"));
   }
-  if (wtPath) fallbacks.push(osc8(claudectlUrl(wtPath), "📁 cwd"));
+  if (wtPath) fallbacks.push(osc8(localUrl(wtPath), "📁 cwd"));
   while (nav.length < 2 && fallbacks.length) nav.push(fallbacks.shift());
 
   // Controls, rendered as clickable emojis in dim brackets: [📒] logs folder →
@@ -228,8 +234,8 @@ function render(d) {
     const logsDir = dirname(tp);
     // dirname of a separator-less path returns it unchanged — skip the logs
     // button rather than duplicating the transcript link.
-    if (logsDir && logsDir !== tp) buttons.push(button(claudectlUrl(logsDir), "📒"));
-    buttons.push(button(claudectlUrl(tp), "📜"));
+    if (logsDir && logsDir !== tp) buttons.push(button(localUrl(logsDir), "📒"));
+    buttons.push(button(localUrl(tp), "📜"));
   }
   const baseBranch = wt?.original_branch || branch;
   if (baseBranch) {
@@ -237,7 +243,7 @@ function render(d) {
     const target = repoUrl
       ? `${repoUrl}/tree/${baseBranch.split("/").map(encodeURIComponent).join("/")}`
       : basePath
-        ? claudectlUrl(basePath)
+        ? localUrl(basePath)
         : null;
     if (target) buttons.push(button(target, "🌳"));
   }
