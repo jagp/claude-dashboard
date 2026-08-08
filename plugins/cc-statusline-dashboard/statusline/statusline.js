@@ -42,7 +42,8 @@ process.stdin.on("end", () => {
 // self-ordering ranking (bronze → silver → gold → trophy), so the difference
 // between them *is* the relationship — no legend needed. Chosen to stay clear
 // of the circle ramp used for effort so the two badges never blur together.
-const MODEL_ICON = { haiku: "🥉", sonnet: "🥈", opus: "🥇", fable: "🏆" };
+//const MODEL_ICON = { haiku: "🥉", sonnet: "🥈", opus: "🥇", fable: "🏆" };
+const MODEL_ICON = { haiku: "🍃", sonnet: "📜", opus: "🎼", fable: "📖" };
 // Unknown/future model: a generic medal — "a ranked model, tier unclassified".
 const MODEL_FALLBACK = "🎖️";
 
